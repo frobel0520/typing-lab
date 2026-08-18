@@ -1,0 +1,14 @@
+{
+  "name": "typing-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A quiet, endless typing practice desktop app focused on finger guidance.",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check renderer/app.js"
+  },
+  "devDependencies": {
+    "electron": "^37.0.0"
+  }
+}

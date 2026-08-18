@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f1013" />
+    <title>Typing Lab · 指法練習機</title>
+    <link rel="stylesheet" href="renderer/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup" aria-label="Typing Lab 指法練習機">
+          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <div>
+            <div class="brand-name">typing lab</div>
+            <div class="brand-caption">指法練習機</div>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="mode-switch" role="tablist" aria-label="練習模式">
+            <button class="mode-button is-active" id="english-mode" type="button" role="tab" aria-selected="true">
+              <span class="mode-dot mode-dot-english"></span>英文
+            </button>
+            <button class="mode-button" id="zhuyin-mode" type="button" role="tab" aria-selected="false">
+              <span class="mode-dot mode-dot-zhuyin"></span>注音
+            </button>
+          </div>
+          <button class="settings-button" id="settings-button" type="button" aria-label="開啟設定" aria-expanded="false">
+            <span class="settings-glyph" aria-hidden="true"></span>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="practice-panel" aria-label="打字練習區">
+          <div class="practice-header">
+            <div>
+              <div class="section-kicker"><span class="live-dot"></span><span id="mode-kicker">ENGLISH / QWERTY</span></div>
+              <h1 id="practice-title">讓每一個鍵，都回到正確的手指。</h1>
+            </div>
+            <div class="practice-actions">
+              <button class="quiet-button" id="pause-button" type="button">暫停 <span class="shortcut">Esc</span></button>
+              <button class="quiet-button" id="reset-button" type="button">重新開始</button>
+            </div>
+          </div>
+
+          <div class="prompt-card" id="prompt-card" tabindex="0" aria-label="打字練習內容">
+            <div class="prompt-topline">
+              <span id="prompt-caption">先看清楚指法，再開始輸入</span>
+              <span class="infinity-mark" aria-label="無限練習">∞</span>
+            </div>
+            <div class="prompt-display" id="prompt-display"></div>
+            <div class="zhuyin-guide is-hidden" id="zhuyin-guide" aria-live="polite">
+              <div class="guide-label">目前音節</div>
+              <div class="guide-symbols" id="guide-symbols"></div>
+              <div class="guide-keys" id="guide-keys"></div>
+            </div>
+          </div>
+
+          <div class="focus-row">
+            <div class="focus-readout">
+              <span class="focus-label">下一鍵</span>
+              <span class="focus-key" id="current-key">K</span>
+              <span class="focus-finger" id="finger-name">右中指</span>
+              <span class="focus-hand" id="hand-name">RIGHT HAND</span>
+            </div>
+            <div class="feedback-message" id="feedback-message" aria-live="polite">準備好了就開始輸入</div>
+          </div>
+
+          <div class="keyboard-card" aria-label="鍵盤與指法提示">
+            <div class="keyboard-meta">
+              <span>指法地圖</span>
+              <span class="keyboard-meta-note" id="keyboard-note">大千式注音鍵位會在注音模式顯示</span>
+            </div>
+            <div class="keyboard" id="keyboard"></div>
+            <div class="finger-legend" id="finger-legend">
+              <span><i class="legend-swatch left-color"></i>左手</span>
+              <span><i class="legend-swatch right-color"></i>右手</span>
+              <span><i class="legend-swatch thumb-color"></i>拇指</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side-panel" aria-label="練習狀態">
+          <section class="side-block session-block">
+            <div class="side-heading"><span>本次練習</span><span class="session-status" id="session-status">IDLE</span></div>
+            <div class="big-stat" id="typed-count">0</div>
+            <div class="stat-label">已輸入按鍵</div>
+            <div class="side-divider"></div>
+            <div class="small-stat-row"><span>錯鍵嘗試</span><strong id="wrong-count">0</strong></div>
+            <div class="small-stat-row"><span>目前模式</span><strong id="mode-stat">英文</strong></div>
+          </section>
+
+          <section class="side-block finger-block">
+            <div class="side-heading"><span>現在使用</span><span class="tiny-status" id="finger-status">GUIDE</span></div>
+            <div class="finger-orb" id="finger-orb"><span id="finger-orb-letter">R</span></div>
+            <div class="orb-label" id="orb-label">右手中指</div>
+            <p class="side-note">程式會鎖定正確按鍵，並持續提示該使用的手指。</p>
+          </section>
+
+          <section class="side-block method-block">
+            <div class="side-heading"><span>練習方式</span><span class="method-mark">01</span></div>
+            <ol class="method-list">
+              <li>眼睛看文字與指法提示</li>
+              <li>用標準手指敲下目前按鍵</li>
+              <li>錯鍵不前進，保持慢而準</li>
+            </ol>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="footerbar">
+        <div class="footer-note"><span class="footer-pulse"></span><span id="footer-mode-note">自由練習 · 不計時 · 不結束</span></div>
+        <div class="footer-shortcuts"><span><kbd>Esc</kbd> 暫停</span><span><kbd>Space</kbd> 依提示輸入</span></div>
+      </footer>
+
+      <div class="settings-panel is-hidden" id="settings-panel" role="dialog" aria-label="設定">
+        <div class="settings-panel-heading">
+          <div>
+            <div class="section-kicker">PREFERENCES</div>
+            <h2>練習設定</h2>
+          </div>
+          <button class="panel-close" id="settings-close" type="button" aria-label="關閉設定">×</button>
+        </div>
+        <label class="setting-row">
+          <span><strong>顯示鍵帽指法</strong><small>在鍵盤上保留手指提示</small></span>
+          <input id="show-finger-labels" type="checkbox" checked />
+          <span class="toggle-ui" aria-hidden="true"></span>
+        </label>
+        <div class="settings-note">
+          <span class="note-mark">i</span>
+          <p>軟體能判斷你按下哪個鍵，但無法直接感測實際是哪根手指。鍵盤顏色與目前指法提示，是用來建立正確肌肉記憶。</p>
+        </div>
+      </div>
+    </div>
+    <script src="renderer/app.js"></script>
+  </body>
+</html>

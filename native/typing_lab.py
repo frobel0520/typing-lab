@@ -1,8 +1,10 @@
 """Typing Lab: a small native Windows typing practice app.
 
-The Chinese mode uses the English keyboard layout and checks the physical
-Dachen key sequence. Space is the first-tone key; an explicit tone key
-finishes the other tones. No IME candidate or Enter key is involved.
+The Chinese mode uses the English keyboard layout and checks Dachen keys.
+Initials, medials, and finals may be entered in any order within a syllable
+and are replaceable within their own groups. The tone key must be last.
+Space is the first-tone key; an explicit tone key finishes the other tones.
+No IME candidate or Enter key is involved.
 """
 
 from __future__ import annotations
@@ -16,6 +18,10 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from bank_data import GENERATED_ENGLISH_FRAGMENTS, GENERATED_ZHUYIN_SAMPLES
+from fiction_data import FICTION_ZHUYIN_SAMPLES
+from fiction_english_data import FICTION_ENGLISH_FRAGMENTS
+from zhuyin_data import CORRECTED_ZHUYIN_SAMPLES
+from zhuyin_variants import accepted_syllables
 
 
 COLORS = {
@@ -119,6 +125,61 @@ ZHUYIN_TO_KEY = {
 
 TONE_SYMBOLS = {"ˊ", "ˇ", "ˋ", "˙"}
 
+ZHUYIN_GROUPS = {
+    "initial": frozenset("ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ"),
+    "medial": frozenset("ㄧㄨㄩ"),
+    "final": frozenset("ㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥ"),
+    "er": frozenset("ㄦ"),
+}
+ZHUYIN_GROUP_BY_SYMBOL = {
+    symbol: group
+    for group, symbols in ZHUYIN_GROUPS.items()
+    for symbol in symbols
+}
+ZHUYIN_CODE_TO_SYMBOL = {code: symbol for symbol, (_, code) in ZHUYIN_TO_KEY.items()}
+ZHUYIN_TONE_CODES = {"Space", "Digit3", "Digit4", "Digit6", "Digit7"}
+
+
+def _zhuyin_syllable_state(syllable: str) -> tuple[dict[str, str], str]:
+    """Return the non-tone key groups and the final tone key for one reading."""
+    groups: dict[str, str] = {}
+    tone_code = "Space"
+    for symbol in syllable:
+        mapping = ZHUYIN_TO_KEY.get(symbol)
+        if not mapping:
+            continue
+        _display, code = mapping
+        if symbol in TONE_SYMBOLS:
+            tone_code = code
+        else:
+            group = ZHUYIN_GROUP_BY_SYMBOL.get(symbol)
+            if group:
+                groups[group] = code
+    return groups, tone_code
+
+
+def _zhuyin_candidate_states(character: dict) -> tuple[tuple[dict[str, str], str], ...]:
+    readings = character.get("accepted_syllables") or (character.get("syllable", ""),)
+    return tuple(_zhuyin_syllable_state(reading) for reading in readings)
+
+
+def _zhuyin_complete(character: dict, pressed: dict[str, str]) -> bool:
+    for groups, _tone_code in _zhuyin_candidate_states(character):
+        if set(pressed) == set(groups) and all(pressed[group] == code for group, code in groups.items()):
+            return True
+    return False
+
+
+def _zhuyin_tone_matches(character: dict, pressed: dict[str, str], tone_code: str) -> bool:
+    for groups, expected_tone in _zhuyin_candidate_states(character):
+        if expected_tone == tone_code and set(pressed) == set(groups) and all(pressed[group] == code for group, code in groups.items()):
+            return True
+    return False
+
+
+def _zhuyin_allowed_groups(character: dict) -> set[str]:
+    return {group for groups, _tone_code in _zhuyin_candidate_states(character) for group in groups}
+
 
 ZHUYIN_SAMPLES = [
     ("我喜歡打字", ["ㄨㄛˇ", "ㄒㄧˇ", "ㄏㄨㄢ", "ㄉㄚˇ", "ㄗˋ"]),
@@ -182,6 +243,12 @@ ZHUYIN_SAMPLES = [
     ("注音鍵位需要熟悉", ["ㄓㄨˋ", "ㄧㄣ", "ㄐㄧㄢˋ", "ㄨㄟˋ", "ㄒㄩ", "ㄧㄠˋ", "ㄕㄨˊ", "ㄒㄧˊ"]),
 ]
 ZHUYIN_SAMPLES.extend(GENERATED_ZHUYIN_SAMPLES)
+ZHUYIN_SAMPLES.extend(FICTION_ZHUYIN_SAMPLES)
+# The MOE-audited bank is authoritative for Chinese practice.  Keep the
+# original literals above for backwards-compatible source history, but use
+# the validated data at runtime so every packaged build gets the same bank.
+ZHUYIN_SAMPLES = list(CORRECTED_ZHUYIN_SAMPLES)
+ZHUYIN_SAMPLES.extend(FICTION_ZHUYIN_SAMPLES)
 
 
 ENGLISH_FRAGMENTS = [
@@ -269,6 +336,8 @@ ENGLISH_FRAGMENTS = [
     "keep practicing until the correct path feels like the easy path",
 ]
 ENGLISH_FRAGMENTS.extend(GENERATED_ENGLISH_FRAGMENTS)
+ENGLISH_FRAGMENTS.extend(FICTION_ENGLISH_FRAGMENTS)
+ENGLISH_FRAGMENTS = [fragment[:1].upper() + fragment[1:] for fragment in ENGLISH_FRAGMENTS]
 
 
 KEYSYM_TO_CODE = {
@@ -300,7 +369,7 @@ class TypingLabApp:
         self.zhuyin_stream: list[dict] = []
         self.zhuyin_characters: list[dict] = []
         self.zhuyin_char_index = 0
-        self.zhuyin_key_index = 0
+        self.zhuyin_pressed: dict[str, str] = {}
         self.english_queue: list[str] = []
         self.zhuyin_queue: list[tuple[str, list[str]]] = []
         self.last_english_fragment: str | None = None
@@ -535,7 +604,7 @@ class TypingLabApp:
         self.zhuyin_guide = self._border_frame(self.prompt_card, bg="raised")
         self.zhuyin_guide.grid(row=2, column=0, sticky="ew", padx=20, pady=(0, 14))
         self.zhuyin_guide.grid_columnconfigure(1, weight=1)
-        self._label(self.zhuyin_guide, "注音序列", bg=COLORS["raised"], fg=COLORS["muted"], font=FONT_UI_SMALL).grid(row=0, column=0, rowspan=2, padx=(9, 10), pady=7)
+        self._label(self.zhuyin_guide, "注音鍵", bg=COLORS["raised"], fg=COLORS["muted"], font=FONT_UI_SMALL).grid(row=0, column=0, rowspan=2, padx=(9, 10), pady=7)
         self.guide_symbols = self._frame(self.zhuyin_guide, bg=COLORS["raised"])
         self.guide_symbols.grid(row=0, column=1, sticky="w", padx=(0, 7), pady=(6, 0))
         self.guide_keys = self._frame(self.zhuyin_guide, bg=COLORS["raised"])
@@ -712,7 +781,7 @@ class TypingLabApp:
         self.zhuyin_stream = []
         self.zhuyin_characters = []
         self.zhuyin_char_index = 0
-        self.zhuyin_key_index = 0
+        self.zhuyin_pressed = {}
         self.english_queue = []
         self.zhuyin_queue = []
         self.last_english_fragment = None
@@ -752,8 +821,9 @@ class TypingLabApp:
 
     def _append_zhuyin_unit(self) -> None:
         text, syllables = self._next_zhuyin_sample()
+        accepted = accepted_syllables(text, syllables)
         unit_index = len(self.zhuyin_units)
-        unit = {"text": text, "syllables": syllables, "unit_index": unit_index}
+        unit = {"text": text, "syllables": syllables, "accepted_syllables": accepted, "unit_index": unit_index}
         self.zhuyin_units.append(unit)
         for syllable_index, syllable in enumerate(syllables):
             tokens: list[dict] = []
@@ -766,17 +836,19 @@ class TypingLabApp:
                     "code": code,
                     "display": display,
                     "symbol": symbol,
+                    "group": "tone" if symbol in TONE_SYMBOLS else ZHUYIN_GROUP_BY_SYMBOL[symbol],
                     "unit_index": unit_index,
                     "syllable_index": syllable_index,
                     "commit": symbol in TONE_SYMBOLS,
                 }
                 tokens.append(token)
                 self.zhuyin_stream.append(token)
-            if not any(symbol in TONE_SYMBOLS for symbol in syllable):
+            if syllable and not any(symbol in TONE_SYMBOLS for symbol in syllable):
                 commit_token = {
                     "code": "Space",
                     "display": "SPACE",
                     "symbol": "一聲",
+                    "group": "tone",
                     "unit_index": unit_index,
                     "syllable_index": syllable_index,
                     "commit": True,
@@ -786,6 +858,8 @@ class TypingLabApp:
             character = text[syllable_index] if syllable_index < len(text) else ""
             self.zhuyin_characters.append({
                 "character": character,
+                "syllable": syllable,
+                "accepted_syllables": accepted[syllable_index] if syllable_index < len(accepted) else (syllable,),
                 "unit_index": unit_index,
                 "syllable_index": syllable_index,
                 "tokens": tokens,
@@ -808,8 +882,14 @@ class TypingLabApp:
         return text, syllables
 
     def _ensure_zhuyin_buffer(self) -> None:
-        while len(self.zhuyin_characters) < self.zhuyin_char_index + 32:
-            self._append_zhuyin_unit()
+        while True:
+            while len(self.zhuyin_characters) < self.zhuyin_char_index + 32:
+                self._append_zhuyin_unit()
+            if self.zhuyin_char_index >= len(self.zhuyin_characters):
+                return
+            if self.zhuyin_characters[self.zhuyin_char_index]["tokens"]:
+                return
+            self.zhuyin_char_index += 1
 
     def _current_zhuyin_character(self) -> dict | None:
         self._ensure_zhuyin_buffer()
@@ -821,8 +901,17 @@ class TypingLabApp:
         character = self._current_zhuyin_character()
         if not character or not character["tokens"]:
             return None
-        position = min(self.zhuyin_key_index, len(character["tokens"]) - 1)
-        token = character["tokens"][position]
+        token = next(
+            (
+                token
+                for token in character["tokens"]
+                if token["group"] != "tone"
+                and token["group"] not in self.zhuyin_pressed
+            ),
+            next((token for token in character["tokens"] if token["group"] == "tone"), None),
+        )
+        if token is None:
+            return None
         return {**token, "character": character["character"], "finger": FINGER_MAP.get(token["code"])}
 
     def _current_token(self) -> dict | None:
@@ -837,11 +926,13 @@ class TypingLabApp:
     def _english_code(character: str) -> str:
         if character == " ":
             return "Space"
-        if character in string.ascii_lowercase:
-            return f"Key{character.upper()}"
+        normalized = character.lower()
+        if normalized in string.ascii_lowercase:
+            return f"Key{normalized.upper()}"
         return {
             ",": "Comma", ".": "Period", "'": "Quote", ";": "Semicolon", "/": "Slash", "-": "Minus",
             "=": "Equal", "[": "BracketLeft", "]": "BracketRight", "\\": "Backslash",
+            "!": "Digit1", "?": "Slash",
         }.get(character, "")
 
     def _render(self) -> None:
@@ -877,7 +968,7 @@ class TypingLabApp:
         end = min(len(self.target), self.index + 78)
         for position in range(start, end):
             character = self.target[position]
-            display = "·" if character == " " else character
+            display = " " if character == " " else character
             if position < self.index:
                 tag = "typed"
             elif position == self.index:
@@ -890,15 +981,15 @@ class TypingLabApp:
     def _render_zhuyin_prompt(self) -> None:
         self.zhuyin_guide.grid()
         current = self._current_zhuyin_character()
-        unit_index = current.get("unit_index", 0) if current else 0
+        character_index = self.zhuyin_char_index
         self.prompt_text.configure(state="normal")
         self.prompt_text.delete("1.0", "end")
-        start = max(0, unit_index - 1)
-        end = min(len(self.zhuyin_units), unit_index + 7)
+        start = max(0, character_index - 8)
+        end = min(len(self.zhuyin_characters), character_index + 56)
         for position in range(start, end):
-            unit = self.zhuyin_units[position]
-            tag = "zh_typed" if position < unit_index else "zh_current" if position == unit_index else "zh_future"
-            self.prompt_text.insert("end", unit["text"], tag)
+            entry = self.zhuyin_characters[position]
+            tag = "zh_typed" if position < character_index else "zh_current" if position == character_index else "zh_future"
+            self.prompt_text.insert("end", entry["character"], tag)
         self.prompt_text.configure(state="disabled")
 
         for child in self.guide_symbols.winfo_children():
@@ -906,10 +997,12 @@ class TypingLabApp:
         for child in self.guide_keys.winfo_children():
             child.destroy()
         tokens = current["tokens"] if current else []
-        active_index = min(self.zhuyin_key_index, len(tokens) - 1) if tokens else -1
-        for position, token in enumerate(tokens):
-            is_typed = position < self.zhuyin_key_index
-            is_current = position == active_index
+        active_token = self._current_zhuyin_token()
+        active_group = active_token.get("group") if active_token else None
+        for token in tokens:
+            group = token["group"]
+            is_typed = group != "tone" and group in self.zhuyin_pressed
+            is_current = group == active_group
             symbol_fg = COLORS["text_soft"] if is_typed else COLORS["text"] if is_current else COLORS["muted"]
             symbol_bg = COLORS["right_soft"] if is_current else COLORS["raised"]
             key_fg = COLORS["right"] if is_current else COLORS["muted"]
@@ -998,6 +1091,7 @@ class TypingLabApp:
         punctuation = {
             " ": "Space", ",": "Comma", ".": "Period", "/": "Slash", "-": "Minus", "=": "Equal",
             "[": "BracketLeft", "]": "BracketRight", "\\": "Backslash", ";": "Semicolon", "'": "Quote", "`": "Backquote",
+            "!": "Digit1", "?": "Slash",
         }
         return punctuation.get(character, "")
 
@@ -1011,6 +1105,8 @@ class TypingLabApp:
         if not code:
             return None
         current = self._current_token()
+        if code in {"ShiftLeft", "ShiftRight"} and current and current.get("raw", "").isalpha() and current["raw"].isupper():
+            return "break"
         if not current or (code not in FINGER_MAP and code != current["code"]):
             return None
         if code == current["code"]:
@@ -1029,25 +1125,44 @@ class TypingLabApp:
         code = self._code_from_event(event)
         if not code or code == "Enter":
             return None
+        character = self._current_zhuyin_character()
         current = self._current_zhuyin_token()
-        if not current:
+        if not character or not current:
             return None
-        if code == current["code"]:
-            character = self._current_zhuyin_character()
-            if character and self.zhuyin_key_index >= len(character["tokens"]) - 1:
+
+        tone = next(
+            (token for token in character["tokens"] if token["group"] == "tone"),
+            None,
+        )
+
+        if code in ZHUYIN_TONE_CODES:
+            if not _zhuyin_complete(character, self.zhuyin_pressed):
+                self._show_key_error(code, "請先完成注音再按聲調")
+            elif not _zhuyin_tone_matches(character, self.zhuyin_pressed, code):
+                expected_display = tone["display"] if tone else "聲調鍵"
+                self._show_key_error(code, f"聲調應按 {expected_display}")
+            else:
+                self.zhuyin_pressed = {}
                 self.zhuyin_char_index += 1
-                self.zhuyin_key_index = 0
                 self._record_typed_character()
                 self._ensure_zhuyin_buffer()
-            else:
-                self.zhuyin_key_index += 1
-            self.feedback = ""
-            self.feedback_kind = "idle"
+                self.feedback = ""
+                self.feedback_kind = "idle"
         else:
-            if code not in FINGER_MAP:
-                return None
-            finger = current.get("finger") or FINGERS["rightIndex"]
-            self._show_key_error(code, f"請用{finger['name']}按 {current['display']}")
+            symbol = ZHUYIN_CODE_TO_SYMBOL.get(code)
+            group = ZHUYIN_GROUP_BY_SYMBOL.get(symbol) if symbol else None
+            if not group or group not in _zhuyin_allowed_groups(character):
+                self._show_key_error(code, "此音節不需要此注音鍵")
+            else:
+                # Non-tone components behave like an IME: a later key in the
+                # same group replaces the earlier key instead of advancing.
+                self.zhuyin_pressed[group] = code
+                self.wrong_code = None
+                if self.wrong_after_id:
+                    self.root.after_cancel(self.wrong_after_id)
+                    self.wrong_after_id = None
+                self.feedback = ""
+                self.feedback_kind = "idle"
         self._render()
         return "break"
 

@@ -1,0 +1,5 @@
+build/
+native/__pycache__/
+work/
+node_modules/
+.DS_Store

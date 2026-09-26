@@ -12,6 +12,14 @@ dist/TypingLab.exe
 
 The `native/` folder contains the Python source, a direct `.pyw` launcher, and the PyInstaller recipe used to build the executable.
 
+To run from source instead (Python 3.12):
+
+```powershell
+py -3.12 native/TypingLab.pyw
+```
+
+See [`native/README.md`](native/README.md) for the Traditional Chinese user guide.
+
 ## Included
 
 - English QWERTY and Traditional Zhuyin / Dachen key mapping
@@ -40,3 +48,29 @@ spans, and every sentence has an official-dictionary word segmentation. The
 authoritative output is `native/zhuyin_data.py`; `native/bank_data.py`,
 `native/fiction_data.py`, and `native/fiction_english_data.py` retain the
 generated source banks and theme-based practice content.
+
+## Build the executable
+
+```powershell
+py -3.12 -m PyInstaller --noconfirm --clean native/TypingLab.spec
+```
+
+The output is `dist/TypingLab.exe`. PyInstaller's `build/` folder is ignored by git.
+
+## Electron version
+
+The repository root also holds an Electron version of the same practice screen (`package.json` v0.1.0, `electron/`, `renderer/`, `index.html`); its visual design notes are in [`DESIGN.md`](DESIGN.md). The native executable above is the maintained deliverable.
+
+```powershell
+npm install
+npm start
+```
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`, since 2026-09-16) runs on every push to `main` and every PR:
+
+- Electron version: `npm run check` plus `node --check` on the two `electron/*.cjs` files
+- Native version: `python -m py_compile native/*.py`
+
+The result feeds the Harbor health light; this repository has no public URL, so CI is its only health signal.

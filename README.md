@@ -1,6 +1,34 @@
 # Typing Lab
 
+> Typing Lab is a native Windows desktop application for endless typing practice. The primary deliverable is `dist/TypingLab.exe`; it opens an independent 800×600 window and does not use a browser.
+
+## Overview
+
 Typing Lab is a native Windows desktop application for endless typing practice. The primary deliverable is `dist/TypingLab.exe`; it opens an independent 800×600 window and does not use a browser.
+
+## Main features and content
+
+- English QWERTY and Traditional Zhuyin / Dachen key mapping
+- Chinese target sentences with Traditional Zhuyin / Dachen key guidance; non-tone components are order-flexible and replaceable within their groups
+- Chinese displays one audited primary reading, while official word-level alternatives (including common neutral-tone variants) are accepted as valid input
+- 15,114 English complete-sentence entries plus 1,659 Traditional Chinese sentence entries; each bank is shuffled without repeats until exhausted
+- 32 original anime/Genshin-inspired sentences are included in both language modes
+- Endless local practice content
+- No timer, score, accuracy percentage, or end screen
+- Wrong keys do not advance the target
+- Persistent cumulative character counts and recent daily practice heatmaps are kept separately for English and Chinese, using the system's local timezone
+- Current key, hand, finger, and virtual keyboard guidance
+- Local preference for mode and keycap labels
+
+## Status and known limitations
+
+The repository describes a native Windows executable and an Electron version. This README update does not recheck either build.
+
+## License and sources
+
+No license file is present in the repository root; this README does not declare reuse rights.
+
+---
 
 ## Use the application
 
@@ -19,20 +47,6 @@ py -3.12 native/TypingLab.pyw
 ```
 
 See [`native/README.md`](native/README.md) for the Traditional Chinese user guide.
-
-## Included
-
-- English QWERTY and Traditional Zhuyin / Dachen key mapping
-- Chinese target sentences with Traditional Zhuyin / Dachen key guidance; non-tone components are order-flexible and replaceable within their groups
-- Chinese displays one audited primary reading, while official word-level alternatives (including common neutral-tone variants) are accepted as valid input
-- 15,114 English complete-sentence entries plus 1,659 Traditional Chinese sentence entries; each bank is shuffled without repeats until exhausted
-- 32 original anime/Genshin-inspired sentences are included in both language modes
-- Endless local practice content
-- No timer, score, accuracy percentage, or end screen
-- Wrong keys do not advance the target
-- Persistent cumulative character counts and recent daily practice heatmaps are kept separately for English and Chinese, using the system's local timezone
-- Current key, hand, finger, and virtual keyboard guidance
-- Local preference for mode and keycap labels
 
 ## Chinese mode
 

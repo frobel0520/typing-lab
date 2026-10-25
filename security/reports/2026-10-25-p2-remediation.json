@@ -1,0 +1,57 @@
+{
+  "taskId": "SEC-P2-20261025",
+  "date": "2026-10-25",
+  "name": "typing-lab",
+  "baseCommit": "05e4af4455ea2d1cc90b0337d3bfd1565f958049",
+  "baseBranch": "main",
+  "branch": "feature/sec-p2-20261025",
+  "state": "隔離修補已備妥，待整合",
+  "change": "Electron37更新已驗證44.9.3，新增package-lock；本地CSP、拒絕外部導航／新視窗及權限要求，保留sandbox與contextIsolation。",
+  "checks": [
+    "真實隱藏Electron44.9.3：30次鍵盤輸入、注音切換、設定操作",
+    "CSP遠端fetch／新視窗／導航拒絕，無Node暴露",
+    "20暖鍵盤roundtrip p95<100ms；npm audit0；原生Python版未更動"
+  ],
+  "counts": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "python": null,
+  "securityGate": "passed_within_checked_scope",
+  "performance": {
+    "result": "not_applicable",
+    "reason": "Only CI source/pins changed or separately recorded runtime fixture metric; no production performance claim"
+  },
+  "validation": "Electron37更新已驗證44.9.3，新增package-lock；本地CSP、拒絕外部導航／新視窗及權限要求，保留sandbox與contextIsolation。 真實隱藏Electron44.9.3：30次鍵盤輸入、注音切換、設定操作；CSP遠端fetch／新視窗／導航拒絕，無Node暴露；20暖鍵盤roundtrip p95<100ms；npm audit0；原生Python版未更動",
+  "integrationNeeded": true,
+  "pushed": false,
+  "deployed": false,
+  "merged": false,
+  "noreplyIdentityVerified": true,
+  "actionPins": 3,
+  "monthlyCost": "Local checks only. No paid APIs, cloud data writes, new recurring services, remote CI, merge or deployment.",
+  "limitations": [
+    "原始工作目錄、未提交修改與分支全部保留；本報告僅適用此隔離分支。",
+    "完整history／秘密輪替／正式服務與二進位鑑識不在此輪驗收，未評項目not_scored。"
+  ],
+  "runtime": {
+    "electron": "44.9.3",
+    "hidden": true,
+    "sandbox": true,
+    "contextIsolation": true,
+    "nodeIntegration": false,
+    "remoteFetchBlocked": true,
+    "popupDenied": true,
+    "navigationDenied": true,
+    "typedKeys": 30,
+    "zhuyinAndSettings": "pass",
+    "warmInputSamples": 20,
+    "p95InputRoundtripMs": 10.25819999999976,
+    "thresholdP95Ms": 100,
+    "scope": "Local hidden desktop synthetic smoke; no production typing performance claim"
+  }
+}

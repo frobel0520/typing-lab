@@ -9,6 +9,6 @@
     "check": "node --check renderer/app.js"
   },
   "devDependencies": {
-    "electron": "^37.0.0"
+    "electron": "44.9.3"
   }
 }

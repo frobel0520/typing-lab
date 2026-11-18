@@ -167,7 +167,8 @@ button:focus-visible,
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  min-height: 38px;
+  padding: 6px 12px;
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
@@ -208,8 +209,8 @@ button:focus-visible,
 
 .settings-button {
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: transparent;
@@ -233,8 +234,8 @@ button:focus-visible,
 }
 
 .settings-glyph {
-  top: 9px;
-  left: 8px;
+  top: 14px;
+  left: 14px;
 }
 
 .settings-glyph::before {
@@ -317,7 +318,8 @@ h1 {
 }
 
 .quiet-button {
-  padding: 6px 8px;
+  min-height: 38px;
+  padding: 6px 10px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;

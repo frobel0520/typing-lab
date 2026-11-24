@@ -14,7 +14,7 @@ py -3.12 native/TypingLab.pyw
 
 ## 目前功能
 
-在具備 Tkinter 的 Windows 環境，可於 repo 根目錄執行
+在具備 Tkinter 與 Python 3.11 以上版本的 Windows 環境，可於 repo 根目錄執行
 `python -m unittest discover -s native -p test_desktop.py`。測試建立隱藏的 Tk 視窗，
 使用合成句子與暫存設定檔，驗證錯鍵不推進、注音聲調最後輸入，以及中英文累計分開保存。
 

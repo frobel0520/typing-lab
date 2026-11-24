@@ -14,6 +14,10 @@ py -3.12 native/TypingLab.pyw
 
 ## 目前功能
 
+在具備 Tkinter 與 Python 3.11 以上版本的 Windows 環境，可於 repo 根目錄執行
+`python -m unittest discover -s native -p test_desktop.py`。測試建立隱藏的 Tk 視窗，
+使用合成句子與暫存設定檔，驗證錯鍵不推進、注音聲調最後輸入，以及中英文累計分開保存。
+
 - 英文 QWERTY 與注音大千鍵位練習
 - 中文模式顯示目標中文字句；聲母、介音、韻母可不分順序，聲調必須最後按下
 - 15,114 個完整英文句子與 1,659 句繁體中文本機句庫；每輪洗牌後用完才重抽，避免固定內容反覆連續出現
